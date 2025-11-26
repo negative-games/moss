@@ -42,7 +42,7 @@ public abstract class MossVelocity {
         });
     }
 
-    private void loadInitialComponents(AnnotationConfigApplicationContext context) {
+    public void loadInitialComponents(AnnotationConfigApplicationContext context) {
         context.registerBean(MossVelocity.class, () -> this);
         context.registerBean(ProxyServer.class, () -> this.server);
     }
