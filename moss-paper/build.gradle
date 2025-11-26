@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'com.gradleup.shadow' version '9.2.2'
 }
 
 def id = 'moss-paper'
@@ -47,10 +48,22 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
+tasks.jar {
+    enabled = false
+}
+
+tasks.shadowJar {
+    archiveBaseName.set(id)
+    archiveVersion.set(apiVersion)
+    archiveClassifier.set("")
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from components.java
+            artifact(tasks.shadowJar) {
+                builtBy tasks.shadowJar
+            }
 
             // Explicit coordinates (optional, defaults to project.group/name/version)
             groupId = "${domain}"
