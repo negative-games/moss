@@ -1,0 +1,3 @@
+name: MyPlugin
+main: com.example.myplugin.MyPlugin
+version: 1.0.0
