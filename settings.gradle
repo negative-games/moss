@@ -1,0 +1,5 @@
+rootProject.name = 'moss'
+include ':moss'
+include 'moss-paper'
+include 'moss-bungeecord'
+include 'moss-velocity'
