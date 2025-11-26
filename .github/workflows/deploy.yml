@@ -1,0 +1,49 @@
+name: Deploy to Negative Games Nexus (Gradle)
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Configure Gradle / Nexus credentials
+        run: |
+          mkdir -p ~/.gradle
+          cat << 'EOF' > ~/.gradle/gradle.properties
+          nexusUsername=${{ secrets.NEXUS_USERNAME }}
+          nexusPassword=${{ secrets.NEXUS_PASSWORD }}
+          nexusSnapshotsUrl=https://repo.negative.games/repository/maven-snapshots
+          nexusReleasesUrl=https://repo.negative.games/repository/maven-releases
+          EOF
+
+      # Snapshot deploy on push to main
+      - name: Build and deploy snapshot
+        if: github.event_name == 'push'
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean publish -PisRelease=false
+
+      # Release deploy on GitHub release publish
+      - name: Build and deploy release
+        if: github.event_name == 'release'
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean publish -PisRelease=true
