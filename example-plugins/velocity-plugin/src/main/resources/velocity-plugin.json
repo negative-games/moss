@@ -1,0 +1,8 @@
+{
+  "id": "myplugin",
+  "name": "MyPlugin",
+  "version": "1.0.0",
+  "description": "Example plugin using Moss",
+  "authors": ["ericlmao"],
+  "main": "com.example.myplugin.MyPlugin"
+}
