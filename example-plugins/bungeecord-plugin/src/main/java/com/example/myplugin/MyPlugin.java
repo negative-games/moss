@@ -10,6 +10,8 @@ public class MyPlugin extends MossBungee {
 
     @Override
     public void loadInitialComponents(AnnotationConfigApplicationContext context) {
+        super.loadInitialComponents(context); // ALWAYS KEEP THIS
+
         // Registering a custom Bean in the initialization phase
         // so it can be used by other classes!
         context.registerBean(ProxyServer.class, ProxyServer::getInstance);
