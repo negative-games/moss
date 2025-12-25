@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public abstract class MossBungee extends Plugin {
 
     private Logger logger;
-    private AnnotationConfigApplicationContext context;
+    protected AnnotationConfigApplicationContext context;
 
     @Override
     public void onLoad() {

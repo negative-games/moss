@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 @Slf4j
 public abstract class MossVelocity {
 
-    private AnnotationConfigApplicationContext context;
+    protected AnnotationConfigApplicationContext context;
 
     private final ProxyServer server;
 
