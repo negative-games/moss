@@ -45,16 +45,16 @@ jobs:
         run: |
           find . -name "build.gradle" -type f -exec sed -i "/-SNAPSHOT'/! s/\(def apiVersion = '[^']*\)'/\1-SNAPSHOT'/" {} +
 
+      # Make gradlew executable
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       # Deploy to RELEASES on release branch
       - name: Build and deploy release
         if: github.ref == 'refs/heads/release'
-        run: |
-          chmod +x ./gradlew
-          ./gradlew clean publish -PisRelease=true
+        run: ./gradlew clean publish -PisRelease=true
 
       # Deploy to SNAPSHOTS on snapshot branch
       - name: Build and deploy snapshot
         if: github.ref == 'refs/heads/snapshot'
-        run: |
-          chmod +x ./gradlew
-          ./gradlew clean publish -PisRelease=false
+        run: ./gradlew clean publish -PisRelease=false
