@@ -3,6 +3,7 @@ package games.negative.moss.paper;
 import games.negative.moss.spring.Disableable;
 import games.negative.moss.spring.Enableable;
 import games.negative.moss.spring.Loadable;
+import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,17 +12,14 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import java.util.Collection;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
+@Slf4j
 public abstract class MossPaper extends JavaPlugin {
 
     public static AnnotationConfigApplicationContext CONTEXT;
 
-    private Logger logger;
-
     @Override
     public void onLoad() {
-        logger = getLogger();
 
         CONTEXT = new AnnotationConfigApplicationContext();
 
@@ -35,8 +33,7 @@ public abstract class MossPaper extends JavaPlugin {
         CONTEXT.start();
 
         invokeBeans(Loadable.class, loadable -> loadable.onLoad(CONTEXT), (loadable, e) -> {
-            logger.severe("Failed to load " + loadable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
+            log.error("Failed to load {}", loadable.getClass().getSimpleName(), e);
         });
     }
 
@@ -52,8 +49,7 @@ public abstract class MossPaper extends JavaPlugin {
     private void enableComponents() {
         // Register enableables
         invokeBeans(Enableable.class, Enableable::onEnable, (enableable, e) -> {
-            logger.severe("Failed to enable " + enableable.getClass().getSimpleName());
-            e.printStackTrace();
+            log.error("Failed to enable {}", enableable.getClass().getSimpleName(), e);
         });
     }
 
@@ -70,8 +66,7 @@ public abstract class MossPaper extends JavaPlugin {
     public void disableComponents() {
         // Invoke disableables
         invokeBeans(Disableable.class, Disableable::onDisable, (disableable, e) -> {
-            logger.severe("Failed to disable " + disableable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
+            log.error("Failed to disable {}", disableable.getClass().getSimpleName(), e);
         });
 
         // Unregister listeners
