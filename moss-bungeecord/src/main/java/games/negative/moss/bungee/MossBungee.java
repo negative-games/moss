@@ -3,10 +3,9 @@ package games.negative.moss.bungee;
 import games.negative.moss.spring.Disableable;
 import games.negative.moss.spring.Enableable;
 import games.negative.moss.spring.Loadable;
-import games.negative.moss.spring.Reloadable;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import net.md_5.bungee.api.scheduler.TaskScheduler;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.util.Collection;
@@ -16,24 +15,26 @@ import java.util.logging.Logger;
 
 public abstract class MossBungee extends Plugin {
 
+    public static AnnotationConfigApplicationContext CONTEXT;
+
     private Logger logger;
-    protected AnnotationConfigApplicationContext context;
 
     @Override
     public void onLoad() {
         logger = getLogger();
 
-        context = new AnnotationConfigApplicationContext();
+        CONTEXT = new AnnotationConfigApplicationContext();
 
-        context.setClassLoader(getClass().getClassLoader());
+        CONTEXT.setClassLoader(getClass().getClassLoader());
 
-        loadInitialComponents(context);
+        loadInitialComponents(CONTEXT);
 
-        context.scan(basePackage());
+        CONTEXT.scan(basePackage());
 
-        context.refresh();
+        CONTEXT.refresh();
+        CONTEXT.start();
 
-        invokeBeans(Loadable.class, loadable -> loadable.onLoad(context), (loadable, e) -> {
+        invokeBeans(Loadable.class, loadable -> loadable.onLoad(CONTEXT), (loadable, e) -> {
             logger.severe("Failed to load " + loadable.getClass().getSimpleName());
             logger.severe(e.getMessage());
         });
@@ -46,12 +47,9 @@ public abstract class MossBungee extends Plugin {
     @Override
     public void onEnable() {
         enableComponents();
-
-        // Initial reload
-        reload();
     }
 
-    private void enableComponents() {
+    public void enableComponents() {
         // Register enableables
         invokeBeans(Enableable.class, Enableable::onEnable, (enableable, e) -> {
             logger.severe("Failed to enable " + enableable.getClass().getSimpleName());
@@ -63,9 +61,9 @@ public abstract class MossBungee extends Plugin {
     public void onDisable() {
         disableComponents();
 
-        if (context != null) {
-            context.close();
-            context = null;
+        if (CONTEXT != null) {
+            CONTEXT.close();
+            CONTEXT = null;
         }
     }
 
@@ -74,14 +72,22 @@ public abstract class MossBungee extends Plugin {
             logger.severe("Failed to disable " + disableable.getClass().getSimpleName());
             logger.severe(e.getMessage());
         });
+
+        ProxyServer server = ProxyServer.getInstance();
+
+        // Cancel all scheduled tasks
+        TaskScheduler scheduler = server.getScheduler();
+        scheduler.cancel(this);
+
+        // Unregister all listeners
+        server.getPluginManager().unregisterListeners(this);
     }
 
 
     public void reload() {
-        invokeBeans(Reloadable.class, Reloadable::onReload, (reloadable, e) -> {
-            logger.severe("Failed to reload " + reloadable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
-        });
+        onDisable();
+        onLoad();
+        onEnable();
     }
 
     /**
@@ -92,7 +98,7 @@ public abstract class MossBungee extends Plugin {
      * @param <T> the type of the beans
      */
     public <T> void invokeBeans(Class<T> clazz, Consumer<T> consumer, BiConsumer<T, Exception> onFailure) {
-        Collection<T> beans = context.getBeansOfType(clazz).values();
+        Collection<T> beans = CONTEXT.getBeansOfType(clazz).values();
         for (T bean : beans) {
             try {
                 consumer.accept(bean);

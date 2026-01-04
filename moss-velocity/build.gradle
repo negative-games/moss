@@ -6,7 +6,7 @@ plugins {
 
 def id = 'moss-velocity'
 def domain = 'games.negative.moss'
-def apiVersion = '1.1.0'
+def apiVersion = '1.2.0'
 
 repositories {
     mavenCentral()

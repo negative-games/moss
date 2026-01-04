@@ -3,10 +3,8 @@ package games.negative.moss.paper;
 import games.negative.moss.spring.Disableable;
 import games.negative.moss.spring.Enableable;
 import games.negative.moss.spring.Loadable;
-import games.negative.moss.spring.Reloadable;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.bukkit.Bukkit;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -17,24 +15,26 @@ import java.util.logging.Logger;
 
 public abstract class MossPaper extends JavaPlugin {
 
+    public static AnnotationConfigApplicationContext CONTEXT;
+
     private Logger logger;
-    protected AnnotationConfigApplicationContext context;
 
     @Override
     public void onLoad() {
         logger = getLogger();
 
-        context = new AnnotationConfigApplicationContext();
+        CONTEXT = new AnnotationConfigApplicationContext();
 
-        context.setClassLoader(getClass().getClassLoader());
+        CONTEXT.setClassLoader(getClass().getClassLoader());
 
-        loadInitialComponents(context);
+        loadInitialComponents(CONTEXT);
 
-        context.scan(basePackage());
+        CONTEXT.scan(basePackage());
 
-        context.refresh();
+        CONTEXT.refresh();
+        CONTEXT.start();
 
-        invokeBeans(Loadable.class, loadable -> loadable.onLoad(context), (loadable, e) -> {
+        invokeBeans(Loadable.class, loadable -> loadable.onLoad(CONTEXT), (loadable, e) -> {
             logger.severe("Failed to load " + loadable.getClass().getSimpleName());
             logger.severe(e.getMessage());
         });
@@ -47,9 +47,6 @@ public abstract class MossPaper extends JavaPlugin {
     @Override
     public void onEnable() {
         enableComponents();
-
-        // Initial reload
-        reload();
     }
 
     private void enableComponents() {
@@ -64,25 +61,33 @@ public abstract class MossPaper extends JavaPlugin {
     public void onDisable() {
         disableComponents();
 
-        if (context != null) {
-            context.close();
-            context = null;
+        if (CONTEXT != null) {
+            CONTEXT.close();
+            CONTEXT = null;
         }
     }
 
     public void disableComponents() {
+        // Invoke disableables
         invokeBeans(Disableable.class, Disableable::onDisable, (disableable, e) -> {
             logger.severe("Failed to disable " + disableable.getClass().getSimpleName());
             logger.severe(e.getMessage());
         });
+
+        // Unregister listeners
+        HandlerList.unregisterAll(this);
+
+        // Cancel scheduled tasks
+        Bukkit.getScheduler().cancelTasks(this);
     }
 
-
+    /**
+     * Reload the plugin by disabling, loading, and enabling it again.
+     */
     public void reload() {
-        invokeBeans(Reloadable.class, Reloadable::onReload, (reloadable, e) -> {
-            logger.severe("Failed to reload " + reloadable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
-        });
+        onDisable();
+        onLoad();
+        onEnable();
     }
 
     /**
@@ -93,7 +98,7 @@ public abstract class MossPaper extends JavaPlugin {
      * @param <T> the type of the beans
      */
     public <T> void invokeBeans(Class<T> clazz, Consumer<T> consumer, BiConsumer<T, Exception> onFailure) {
-        Collection<T> beans = context.getBeansOfType(clazz).values();
+        Collection<T> beans = CONTEXT.getBeansOfType(clazz).values();
         for (T bean : beans) {
             try {
                 consumer.accept(bean);
