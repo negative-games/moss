@@ -3,9 +3,8 @@ name: Deploy to Negative Games Nexus (Gradle)
 on:
   push:
     branches:
-      - main
-  release:
-    types: [published]
+      - release
+      - snapshot
 
 jobs:
   deploy:
@@ -34,16 +33,28 @@ jobs:
           nexusReleasesUrl=https://repo.negative.games/repository/maven-releases
           EOF
 
-      # Snapshot deploy on push to main
-      - name: Build and deploy snapshot
-        if: github.event_name == 'push'
+      # Modify version for release branch (remove -SNAPSHOT)
+      - name: Modify version for release
+        if: github.ref == 'refs/heads/release'
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean publish -PisRelease=false
+          find . -name "build.gradle" -type f -exec sed -i "s/\(def apiVersion = '[^']*\)-SNAPSHOT'/\1'/" {} +
 
-      # Release deploy on GitHub release publish
+      # Modify version for snapshot branch (add -SNAPSHOT if not present)
+      - name: Modify version for snapshot
+        if: github.ref == 'refs/heads/snapshot'
+        run: |
+          find . -name "build.gradle" -type f -exec sed -i "/-SNAPSHOT'/! s/\(def apiVersion = '[^']*\)'/\1-SNAPSHOT'/" {} +
+
+      # Deploy to RELEASES on release branch
       - name: Build and deploy release
-        if: github.event_name == 'release'
+        if: github.ref == 'refs/heads/release'
         run: |
           chmod +x ./gradlew
           ./gradlew clean publish -PisRelease=true
+
+      # Deploy to SNAPSHOTS on snapshot branch
+      - name: Build and deploy snapshot
+        if: github.ref == 'refs/heads/snapshot'
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean publish -PisRelease=false
