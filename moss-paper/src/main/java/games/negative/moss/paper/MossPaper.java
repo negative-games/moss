@@ -18,23 +18,23 @@ import java.util.logging.Logger;
 public abstract class MossPaper extends JavaPlugin {
 
     private Logger logger;
-    protected AnnotationConfigApplicationContext context;
+    protected static AnnotationConfigApplicationContext CONTEXT;
 
     @Override
     public void onLoad() {
         logger = getLogger();
 
-        context = new AnnotationConfigApplicationContext();
+        CONTEXT = new AnnotationConfigApplicationContext();
 
-        context.setClassLoader(getClass().getClassLoader());
+        CONTEXT.setClassLoader(getClass().getClassLoader());
 
-        loadInitialComponents(context);
+        loadInitialComponents(CONTEXT);
 
-        context.scan(basePackage());
+        CONTEXT.scan(basePackage());
 
-        context.refresh();
+        CONTEXT.refresh();
 
-        invokeBeans(Loadable.class, loadable -> loadable.onLoad(context), (loadable, e) -> {
+        invokeBeans(Loadable.class, loadable -> loadable.onLoad(CONTEXT), (loadable, e) -> {
             logger.severe("Failed to load " + loadable.getClass().getSimpleName());
             logger.severe(e.getMessage());
         });
@@ -47,9 +47,6 @@ public abstract class MossPaper extends JavaPlugin {
     @Override
     public void onEnable() {
         enableComponents();
-
-        // Initial reload
-        reload();
     }
 
     private void enableComponents() {
@@ -64,9 +61,9 @@ public abstract class MossPaper extends JavaPlugin {
     public void onDisable() {
         disableComponents();
 
-        if (context != null) {
-            context.close();
-            context = null;
+        if (CONTEXT != null) {
+            CONTEXT.close();
+            CONTEXT = null;
         }
     }
 
@@ -79,10 +76,9 @@ public abstract class MossPaper extends JavaPlugin {
 
 
     public void reload() {
-        invokeBeans(Reloadable.class, Reloadable::onReload, (reloadable, e) -> {
-            logger.severe("Failed to reload " + reloadable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
-        });
+        onDisable();
+        onLoad();
+        onEnable();
     }
 
     /**
@@ -93,7 +89,7 @@ public abstract class MossPaper extends JavaPlugin {
      * @param <T> the type of the beans
      */
     public <T> void invokeBeans(Class<T> clazz, Consumer<T> consumer, BiConsumer<T, Exception> onFailure) {
-        Collection<T> beans = context.getBeansOfType(clazz).values();
+        Collection<T> beans = CONTEXT.getBeansOfType(clazz).values();
         for (T bean : beans) {
             try {
                 consumer.accept(bean);
