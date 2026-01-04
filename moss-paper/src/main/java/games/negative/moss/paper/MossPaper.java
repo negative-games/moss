@@ -53,7 +53,7 @@ public abstract class MossPaper extends JavaPlugin {
         // Register enableables
         invokeBeans(Enableable.class, Enableable::onEnable, (enableable, e) -> {
             logger.severe("Failed to enable " + enableable.getClass().getSimpleName());
-            logger.severe(e.getMessage());
+            e.printStackTrace();
         });
     }
 
