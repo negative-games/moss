@@ -50,14 +50,10 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # List available publishing tasks for debugging
-      - name: List publishing tasks
-        run: ./gradlew tasks --group=publishing
-
       - name: Build and deploy release
         if: github.ref == 'refs/heads/release'
-        run: ./gradlew clean centralPortalUpload -PisRelease=true
+        run: ./gradlew clean :moss:publish :moss-paper:publish :moss-velocity:publish :moss-bungeecord:publish -PisRelease=true
 
       - name: Build and deploy snapshot
         if: github.ref == 'refs/heads/snapshot'
-        run: ./gradlew clean centralPortalUpload -PisRelease=false
+        run: ./gradlew clean :moss:publish :moss-paper:publish :moss-velocity:publish :moss-bungeecord:publish -PisRelease=false
