@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
+    id 'com.gradleup.shadow' version '9.2.2'
+    id 'net.thebugmc.gradle.sonatype-central-portal-publisher' version '1.2.4'
 }
 
 def id = 'moss-common'
@@ -39,17 +41,6 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-tasks.register('sourcesJar', Jar) {
-    archiveClassifier.set('sources')
-    from sourceSets.main.allSource
-}
-
-tasks.register('javadocJar', Jar) {
-    archiveClassifier.set('javadoc')
-    from javadoc.destinationDir
-    dependsOn javadoc
-}
-
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -62,7 +53,7 @@ publishing {
 
             pom {
                 name = "${id}"
-                description = 'Moss Velocity module - A Spring-based Minecraft proxy framework'
+                description = 'Moss Core module - A Spring-based framework'
                 url = 'https://github.com/negative-games/moss'
 
                 licenses {

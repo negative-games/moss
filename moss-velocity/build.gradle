@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'com.gradleup.shadow' version '9.2.2'
+    id 'net.thebugmc.gradle.sonatype-central-portal-publisher' version '1.2.4'
 }
 
 def id = 'moss-velocity'
@@ -59,25 +60,14 @@ tasks.shadowJar {
     archiveClassifier.set("")
 }
 
-tasks.register('sourcesJar', Jar) {
-    archiveClassifier.set('sources')
-    from sourceSets.main.allSource
-}
-
-tasks.register('javadocJar', Jar) {
-    archiveClassifier.set('javadoc')
-    from javadoc.destinationDir
-    dependsOn javadoc
-}
-
 publishing {
     publications {
         mavenJava(MavenPublication) {
             artifact(tasks.shadowJar) {
                 builtBy tasks.shadowJar
             }
-            artifact(tasks.sourcesJar)
-            artifact(tasks.javadocJar)
+            artifact sourcesJar
+            artifact javadocJar
 
             groupId = "${domain}"
             artifactId = "${id}"
@@ -110,6 +100,12 @@ publishing {
             }
         }
     }
+}
+
+centralPortal {
+    username = findProperty("mavenCentralUsername")
+    password = findProperty("mavenCentralPassword")
+    publishingType = 'AUTOMATIC'
 }
 
 signing {

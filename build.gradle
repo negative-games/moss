@@ -1,7 +1,5 @@
 plugins {
     id 'java'
-    id 'maven-publish'
-    id 'signing'
 }
 
 repositories {
@@ -12,34 +10,4 @@ dependencies {
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
-}
-
-subprojects {
-    plugins.withId('maven-publish') {
-        publishing {
-            repositories {
-                maven {
-                    name = "mavenCentral"
-
-                    def isRelease = (findProperty("isRelease") == "true")
-                    url = uri(isRelease
-                            ? "https://central.sonatype.com/api/v1/publisher/deployments/download/"
-                            : "https://central.sonatype.com/repository/maven-snapshots/"
-                    )
-
-                    credentials {
-                        username = findProperty("mavenCentralUsername")
-                        password = findProperty("mavenCentralPassword")
-                    }
-                }
-            }
-        }
-
-        plugins.withId('signing') {
-            signing {
-                useGpgCmd()
-                sign publishing.publications
-            }
-        }
-    }
 }

@@ -52,8 +52,8 @@ jobs:
 
       - name: Build and deploy release
         if: github.ref == 'refs/heads/release'
-        run: ./gradlew clean publish -PisRelease=true
+        run: ./gradlew clean publishToSonatypeCentralPortal -PisRelease=true
 
       - name: Build and deploy snapshot
         if: github.ref == 'refs/heads/snapshot'
-        run: ./gradlew clean publish -PisRelease=false
+        run: ./gradlew clean publishToSonatypeCentralPortal -PisRelease=false
