@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
 }
 
 repositories {
@@ -14,25 +15,30 @@ dependencies {
 }
 
 subprojects {
-    // Only configure projects that use maven-publish
     plugins.withId('maven-publish') {
         publishing {
             repositories {
                 maven {
-                    name = "nexus"
+                    name = "mavenCentral"
 
-                    def snapshotsUrl = findProperty("nexusSnapshotsUrl") ?: "https://repo.negative.games/repository/maven-snapshots"
-                    def releasesUrl  = findProperty("nexusReleasesUrl")  ?: "https://repo.negative.games/repository/maven-releases"
-
-                    // Controlled via -PisRelease=true|false (or default to snapshots)
                     def isRelease = (findProperty("isRelease") == "true")
-                    url = uri(isRelease ? releasesUrl : snapshotsUrl)
+                    url = uri(isRelease
+                            ? "https://central.sonatype.com/api/v1/publisher/deployments/download/"
+                            : "https://central.sonatype.com/repository/maven-snapshots/"
+                    )
 
                     credentials {
-                        username = findProperty("nexusUsername")
-                        password = findProperty("nexusPassword")
+                        username = findProperty("mavenCentralUsername")
+                        password = findProperty("mavenCentralPassword")
                     }
                 }
+            }
+        }
+
+        plugins.withId('signing') {
+            signing {
+                useGpgCmd()
+                sign publishing.publications
             }
         }
     }

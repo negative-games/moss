@@ -1,4 +1,4 @@
-name: Deploy to Negative Games Nexus (Gradle)
+name: Deploy to Maven Central (Gradle)
 
 on:
   push:
@@ -23,38 +23,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Configure Gradle / Nexus credentials
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Configure Gradle properties
         run: |
           mkdir -p ~/.gradle
-          cat << 'EOF' > ~/.gradle/gradle.properties
-          nexusUsername=${{ secrets.NEXUS_USERNAME }}
-          nexusPassword=${{ secrets.NEXUS_PASSWORD }}
-          nexusSnapshotsUrl=https://repo.negative.games/repository/maven-snapshots
-          nexusReleasesUrl=https://repo.negative.games/repository/maven-releases
+          cat << EOF > ~/.gradle/gradle.properties
+          mavenCentralUsername=${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          mavenCentralPassword=${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          signing.gnupg.keyName=${{ secrets.GPG_KEY_ID }}
+          signing.gnupg.passphrase=${{ secrets.GPG_PASSPHRASE }}
           EOF
 
-      # Modify version for release branch (remove -SNAPSHOT)
       - name: Modify version for release
         if: github.ref == 'refs/heads/release'
         run: |
           find . -name "build.gradle" -type f -exec sed -i "s/\(def apiVersion = '[^']*\)-SNAPSHOT'/\1'/" {} +
 
-      # Modify version for snapshot branch (add -SNAPSHOT if not present)
       - name: Modify version for snapshot
         if: github.ref == 'refs/heads/snapshot'
         run: |
           find . -name "build.gradle" -type f -exec sed -i "/-SNAPSHOT'/! s/\(def apiVersion = '[^']*\)'/\1-SNAPSHOT'/" {} +
 
-      # Make gradlew executable
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Deploy to RELEASES on release branch
       - name: Build and deploy release
         if: github.ref == 'refs/heads/release'
         run: ./gradlew clean publish -PisRelease=true
 
-      # Deploy to SNAPSHOTS on snapshot branch
       - name: Build and deploy snapshot
         if: github.ref == 'refs/heads/snapshot'
         run: ./gradlew clean publish -PisRelease=false

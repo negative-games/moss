@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
     id 'com.gradleup.shadow' version '9.2.2'
 }
 
@@ -58,21 +59,33 @@ tasks.shadowJar {
     archiveClassifier.set("")
 }
 
+tasks.register('sourcesJar', Jar) {
+    archiveClassifier.set('sources')
+    from sourceSets.main.allSource
+}
+
+tasks.register('javadocJar', Jar) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+    dependsOn javadoc
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
             artifact(tasks.shadowJar) {
                 builtBy tasks.shadowJar
             }
+            artifact(tasks.sourcesJar)
+            artifact(tasks.javadocJar)
 
-            // Explicit coordinates (optional, defaults to project.group/name/version)
             groupId = "${domain}"
             artifactId = "${id}"
             version = "${apiVersion}"
 
             pom {
                 name = "${id}"
-                description = project.description
+                description = 'Moss Velocity module - A Spring-based Minecraft proxy framework'
                 url = 'https://github.com/negative-games/moss'
 
                 licenses {
@@ -88,7 +101,18 @@ publishing {
                         name = 'Eric'
                     }
                 }
+
+                scm {
+                    url = 'https://github.com/negative-games/moss'
+                    connection = 'scm:git:git://github.com/negative-games/moss.git'
+                    developerConnection = 'scm:git:ssh://github.com/negative-games/moss.git'
+                }
             }
         }
     }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
 }
